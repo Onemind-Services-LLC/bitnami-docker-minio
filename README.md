@@ -118,8 +118,8 @@ Use the `--network app-tier` argument to the `docker run` command to attach the 
 
 ```console
 $ docker run -d --name minio-server \
-    --env MINIO_ACCESS_KEY="minio-access-key" \
-    --env MINIO_SECRET_KEY="minio-secret-key" \
+    --env MINIO_ROOT_USER="minio-access-key" \
+    --env MINIO_ROOT_PASSWORD="minio-secret-key" \
     --network app-tier \
     bitnami/minio:latest
 ```
@@ -156,8 +156,8 @@ services:
       - '9000:9000'
       - '9001:9001'
     environment:
-      - MINIO_ACCESS_KEY=minio-access-key
-      - MINIO_SECRET_KEY=minio-secret-key
+      - MINIO_ROOT_USER=minio-access-key
+      - MINIO_ROOT_PASSWORD=minio-secret-key
     networks:
       - app-tier
   myapp:
@@ -253,8 +253,8 @@ You can configure MinIO(R) in Distributed Mode to setup a highly-available stora
 
 * `MINIO_DISTRIBUTED_MODE_ENABLED`: Set it to 'yes' to enable Distributed Mode.
 * `MINIO_DISTRIBUTED_NODES`: List of MinIO(R) nodes hosts. Available separators are ' ', ',' and ';'.
-* `MINIO_ACCESS_KEY`: MinIO(R) server Access Key. Must be common on every node.
-* `MINIO_SECRET_KEY`: MinIO(R) server Secret Key. Must be common on every node.
+* `MINIO_ROOT_USER`: MinIO(R) server Access Key. Must be common on every node.
+* `MINIO_ROOT_PASSWORD`: MinIO(R) server Secret Key. Must be common on every node.
 
 You can use the Docker Compose below to create an 4-node distributed MinIO(R) setup:
 
@@ -265,32 +265,32 @@ services:
   minio1:
     image: 'bitnami/minio:latest'
     environment:
-      - MINIO_ACCESS_KEY=minio-access-key
-      - MINIO_SECRET_KEY=minio-secret-key
+      - MINIO_ROOT_USER=minio-access-key
+      - MINIO_ROOT_PASSWORD=minio-secret-key
       - MINIO_DISTRIBUTED_MODE_ENABLED=yes
       - MINIO_DISTRIBUTED_NODES=minio1,minio2,minio3,minio4
       - MINIO_SKIP_CLIENT=yes
   minio2:
     image: 'bitnami/minio:latest'
     environment:
-      - MINIO_ACCESS_KEY=minio-access-key
-      - MINIO_SECRET_KEY=minio-secret-key
+      - MINIO_ROOT_USER=minio-access-key
+      - MINIO_ROOT_PASSWORD=minio-secret-key
       - MINIO_DISTRIBUTED_MODE_ENABLED=yes
       - MINIO_DISTRIBUTED_NODES=minio1,minio2,minio3,minio4
       - MINIO_SKIP_CLIENT=yes
   minio3:
     image: 'bitnami/minio:latest'
     environment:
-      - MINIO_ACCESS_KEY=minio-access-key
-      - MINIO_SECRET_KEY=minio-secret-key
+      - MINIO_ROOT_USER=minio-access-key
+      - MINIO_ROOT_PASSWORD=minio-secret-key
       - MINIO_DISTRIBUTED_MODE_ENABLED=yes
       - MINIO_DISTRIBUTED_NODES=minio1,minio2,minio3,minio4
       - MINIO_SKIP_CLIENT=yes
   minio4:
     image: 'bitnami/minio:latest'
     environment:
-      - MINIO_ACCESS_KEY=minio-access-key
-      - MINIO_SECRET_KEY=minio-secret-key
+      - MINIO_ROOT_USER=minio-access-key
+      - MINIO_ROOT_PASSWORD=minio-secret-key
       - MINIO_DISTRIBUTED_MODE_ENABLED=yes
       - MINIO_DISTRIBUTED_NODES=minio1,minio2,minio3,minio4
       - MINIO_SKIP_CLIENT=yes
@@ -307,8 +307,8 @@ services:
       - 'minio_0_data_0:/data-0'
       - 'minio_0_data_1:/data-1'
     environment:
-      - MINIO_ACCESS_KEY=minio
-      - MINIO_SECRET_KEY=miniosecret
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=miniosecret
       - MINIO_DISTRIBUTED_MODE_ENABLED=yes
       - MINIO_DISTRIBUTED_NODES=minio-{0...1}/data-{0...1}
   minio-1:
@@ -317,8 +317,8 @@ services:
       - 'minio_1_data_0:/data-0'
       - 'minio_1_data_1:/data-1'
     environment:
-      - MINIO_ACCESS_KEY=minio
-      - MINIO_SECRET_KEY=miniosecret
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=miniosecret
       - MINIO_DISTRIBUTED_MODE_ENABLED=yes
       - MINIO_DISTRIBUTED_NODES=minio-{0...1}/data-{0...1}
 volumes:
@@ -336,7 +336,7 @@ Find more information about the Distributed Mode in the [MinIO(R) documentation]
 
 ### Reconfiguring Keys on container restarts
 
-MinIO(R) configures the access & secret key during the 1st initialization based on the `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY` environment variables, respetively.
+MinIO(R) configures the access & secret key during the 1st initialization based on the `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` environment variables, respetively.
 
 When using persistence, MinIO(R) will reuse the data configured during the 1st initialization by default, ignoring whatever values are set on these environment variables. You can force MinIO(R) to reconfigure the keys based on the environment variables by setting the `MINIO_FORCE_NEW_KEYS` environment variable to `yes`:
 
@@ -345,8 +345,8 @@ $ docker run --name minio \
     --publish 9000:9000 \
     --publish 9001:9001 \
     --env MINIO_FORCE_NEW_KEYS="yes" \
-    --env MINIO_ACCESS_KEY="new-minio-access-key" \
-    --env MINIO_SECRET_KEY="new-minio-secret-key" \
+    --env MINIO_ROOT_USER="new-minio-access-key" \
+    --env MINIO_ROOT_PASSWORD="new-minio-secret-key" \
     --volume /path/to/minio-persistence:/data \
     bitnami/minio:latest
 ```

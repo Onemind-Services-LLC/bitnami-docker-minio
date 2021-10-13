@@ -40,22 +40,22 @@ export MINIO_DAEMON_GROUP="minio"
 export PATH="${MINIO_BASEDIR}/bin:$PATH"
 export MINIO_FORCE_NEW_KEYS="${MINIO_FORCE_NEW_KEYS:-no}"
 EOF
-    if [[ -n "${MINIO_ACCESS_KEY_FILE:-}" ]]; then
+    if [[ -n "${MINIO_ROOT_USER_FILE:-}" ]]; then
         cat <<"EOF"
-export MINIO_ACCESS_KEY="$(< "${MINIO_ACCESS_KEY_FILE}")"
+export MINIO_ROOT_USER="$(< "${MINIO_ROOT_USER_FILE}")"
 EOF
     else
         cat <<"EOF"
-export MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-minio}"
+export MINIO_ROOT_USER="${MINIO_ROOT_USER:-minio}"
 EOF
     fi
-    if [[ -n "${MINIO_SECRET_KEY_FILE:-}" ]]; then
+    if [[ -n "${MINIO_ROOT_PASSWORD_FILE:-}" ]]; then
         cat <<"EOF"
-export MINIO_SECRET_KEY="$(< "${MINIO_SECRET_KEY_FILE}")"
+export MINIO_ROOT_PASSWORD="$(< "${MINIO_ROOT_PASSWORD_FILE}")"
 EOF
     else
         cat <<"EOF"
-export MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-miniosecret}"
+export MINIO_ROOT_PASSWORD="${MINIO_ROOT_PASSWORD:-miniosecret}"
 EOF
     fi
 }
@@ -218,8 +218,8 @@ minio_validate() {
     }
 
     if is_boolean_yes "$MINIO_DISTRIBUTED_MODE_ENABLED"; then
-        if [[ -z "${MINIO_ACCESS_KEY:-}" ]] || [[ -z "${MINIO_ACCESS_KEY:-}" ]]; then
-            print_validation_error "Distributed mode is enabled. Both MINIO_ACCESS_KEY and MINIO_ACCESS_KEY environment must be set"
+        if [[ -z "${MINIO_ROOT_USER:-}" ]] || [[ -z "${MINIO_ROOT_PASSWORD:-}" ]]; then
+            print_validation_error "Distributed mode is enabled. Both MINIO_ROOT_USER and MINIO_ROOT_PASSWORD environment must be set"
         fi
         if [[ -z "${MINIO_DISTRIBUTED_NODES:-}" ]]; then
             print_validation_error "Distributed mode is enabled. Nodes must be indicated setting the environment variable MINIO_DISTRIBUTED_NODES"
@@ -302,11 +302,11 @@ minio_create_default_buckets() {
 minio_regenerate_keys() {
     local error_code=0
     if is_boolean_yes "$MINIO_FORCE_NEW_KEYS" && [[ -f "${MINIO_DATADIR}/.access_key" ]] && [[ -f "${MINIO_DATADIR}/.secret_key" ]]; then
-        MINIO_ACCESS_KEY_OLD="$(cat "${MINIO_DATADIR}/.access_key")"
-        MINIO_SECRET_KEY_OLD="$(cat "${MINIO_DATADIR}/.secret_key")"
-        if [[ "$MINIO_ACCESS_KEY_OLD" != "$MINIO_ACCESS_KEY" ]] || [[ "$MINIO_SECRET_KEY_OLD" != "$MINIO_SECRET_KEY" ]]; then
+        MINIO_ROOT_USER_OLD="$(cat "${MINIO_DATADIR}/.access_key")"
+        MINIO_ROOT_PASSWORD_OLD="$(cat "${MINIO_DATADIR}/.secret_key")"
+        if [[ "$MINIO_ROOT_USER_OLD" != "$MINIO_ROOT_USER" ]] || [[ "$MINIO_ROOT_PASSWORD_OLD" != "$MINIO_ROOT_PASSWORD" ]]; then
             info "Reconfiguring MinIO credentials..."
-            export MINIO_ACCESS_KEY_OLD MINIO_SECRET_KEY_OLD
+            export MINIO_ROOT_USER_OLD MINIO_ROOT_PASSWORD_OLD
             # Restart MinIO to reconfigure credentials
             # ref: https://docs.min.io/docs/minio-server-configuration-guide.html
             minio_start_bg
@@ -314,8 +314,8 @@ minio_regenerate_keys() {
             error_code=1
         fi
     fi
-    echo "$MINIO_ACCESS_KEY" > "${MINIO_DATADIR}/.access_key"
-    echo "$MINIO_SECRET_KEY" > "${MINIO_DATADIR}/.secret_key"
+    echo "$MINIO_ROOT_USER" > "${MINIO_DATADIR}/.access_key"
+    echo "$MINIO_ROOT_PASSWORD" > "${MINIO_DATADIR}/.secret_key"
     chmod 600 "${MINIO_DATADIR}/.secret_key" "${MINIO_DATADIR}/.access_key"
 
     [[ "$error_code" -eq 0 ]] || exit "$error_code"
