@@ -314,8 +314,8 @@ minio_regenerate_keys() {
             error_code=1
         fi
     fi
-    echo "$MINIO_ROOT_USER" > "${MINIO_DATADIR}/.access_key"
-    echo "$MINIO_ROOT_PASSWORD" > "${MINIO_DATADIR}/.secret_key"
+    echo "$MINIO_ROOT_USER" > "${MINIO_DATADIR}/.root_user"
+    echo "$MINIO_ROOT_PASSWORD" > "${MINIO_DATADIR}/.root_password"
     chmod 600 "${MINIO_DATADIR}/.secret_key" "${MINIO_DATADIR}/.access_key"
 
     [[ "$error_code" -eq 0 ]] || exit "$error_code"
