@@ -302,8 +302,8 @@ minio_create_default_buckets() {
 minio_regenerate_keys() {
     local error_code=0
     if is_boolean_yes "$MINIO_FORCE_NEW_KEYS" && [[ -f "${MINIO_DATADIR}/.access_key" ]] && [[ -f "${MINIO_DATADIR}/.secret_key" ]]; then
-        MINIO_ROOT_USER_OLD="$(cat "${MINIO_DATADIR}/.access_key")"
-        MINIO_ROOT_PASSWORD_OLD="$(cat "${MINIO_DATADIR}/.secret_key")"
+        MINIO_ROOT_USER_OLD="$(cat "${MINIO_DATADIR}/.root_user")"
+        MINIO_ROOT_PASSWORD_OLD="$(cat "${MINIO_DATADIR}/.root_password")"
         if [[ "$MINIO_ROOT_USER_OLD" != "$MINIO_ROOT_USER" ]] || [[ "$MINIO_ROOT_PASSWORD_OLD" != "$MINIO_ROOT_PASSWORD" ]]; then
             info "Reconfiguring MinIO credentials..."
             export MINIO_ROOT_USER_OLD MINIO_ROOT_PASSWORD_OLD
