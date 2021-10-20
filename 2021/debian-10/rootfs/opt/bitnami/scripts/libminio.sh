@@ -14,53 +14,6 @@
 # Functions
 
 ########################
-# Load global variables used on MinIO configuration
-# Globals:
-#   MINIO_*
-# Arguments:
-#   None
-# Returns:
-#   Series of exports to be used as 'eval' arguments
-#########################
-minio_env() {
-    cat <<"EOF"
-export MINIO_BASEDIR="/opt/bitnami/minio"
-export MINIO_LOGDIR="${MINIO_BASEDIR}/log"
-export MINIO_SECRETSDIR="${MINIO_BASEDIR}/secrets"
-export MINIO_DATADIR="/data"
-export MINIO_CERTSDIR="${MINIO_CERTSDIR:-/certs}"
-export MINIO_SCHEME="${MINIO_SCHEME:-http}"
-export MINIO_SKIP_CLIENT="${MINIO_SKIP_CLIENT:-no}"
-export MINIO_DISTRIBUTED_MODE_ENABLED="${MINIO_DISTRIBUTED_MODE_ENABLED:-no}"
-export MINIO_DEFAULT_BUCKETS="${MINIO_DEFAULT_BUCKETS:-}"
-export MINIO_API_PORT_NUMBER="${MINIO_API_PORT_NUMBER:-9000}"
-export MINIO_CONSOLE_PORT_NUMBER="${MINIO_CONSOLE_PORT_NUMBER:-9001}"
-export MINIO_DAEMON_USER="minio"
-export MINIO_DAEMON_GROUP="minio"
-export PATH="${MINIO_BASEDIR}/bin:$PATH"
-export MINIO_FORCE_NEW_KEYS="${MINIO_FORCE_NEW_KEYS:-no}"
-EOF
-    if [[ -n "${MINIO_ROOT_USER_FILE:-}" ]]; then
-        cat <<"EOF"
-export MINIO_ROOT_USER="$(< "${MINIO_ROOT_USER_FILE}")"
-EOF
-    else
-        cat <<"EOF"
-export MINIO_ROOT_USER="${MINIO_ROOT_USER:-minio}"
-EOF
-    fi
-    if [[ -n "${MINIO_ROOT_PASSWORD_FILE:-}" ]]; then
-        cat <<"EOF"
-export MINIO_ROOT_PASSWORD="$(< "${MINIO_ROOT_PASSWORD_FILE}")"
-EOF
-    else
-        cat <<"EOF"
-export MINIO_ROOT_PASSWORD="${MINIO_ROOT_PASSWORD:-miniosecret}"
-EOF
-    fi
-}
-
-########################
 # Checks if MINIO_DISTRIBUTED_NODES uses the ellipses syntax {1...n}
 # Globals:
 #   MINIO_DISTRIBUTED_NODES
@@ -134,7 +87,7 @@ is_minio_running() {
 #########################
 minio_start_bg() {
     local -r exec=$(command -v minio)
-    local -a args=("server" "--certs-dir" "${MINIO_CERTSDIR}" "--console-address" ":${MINIO_CONSOLE_PORT_NUMBER}")
+    local -a args=("server" "--certs-dir" "${MINIO_CERTS_DIR}" "--console-address" ":${MINIO_CONSOLE_PORT_NUMBER}")
     local -a nodes
 
     if is_boolean_yes "$MINIO_DISTRIBUTED_MODE_ENABLED"; then
@@ -143,11 +96,11 @@ minio_start_bg() {
             if is_distributed_ellipses_syntax; then
                 args+=("${MINIO_SCHEME}://${node}")
             else
-                args+=("${MINIO_SCHEME}://${node}:${MINIO_API_PORT_NUMBER}/${MINIO_DATADIR}")
+                args+=("${MINIO_SCHEME}://${node}:${MINIO_API_PORT_NUMBER}/${MINIO_DATA_DIR}")
             fi
         done
     else
-        args+=("${MINIO_DATADIR}")
+        args+=("${MINIO_DATA_DIR}")
     fi
 
     is_minio_running && return
@@ -174,8 +127,8 @@ minio_stop() {
         minio_client_execute_timeout admin service stop local >/dev/null 2>&1 || true
 
         local counter=5
-        while is_minio_running; do
-            if [[ "$counter" -ne 0 ]]; then
+        while is_minio_running || is_service_running "$MINIO_PID"; do
+            if [[ "$counter" -le 0 ]]; then
                 break
             fi
             sleep 1;
@@ -301,9 +254,9 @@ minio_create_default_buckets() {
 #########################
 minio_regenerate_keys() {
     local error_code=0
-    if is_boolean_yes "$MINIO_FORCE_NEW_KEYS" && [[ -f "${MINIO_DATADIR}/.access_key" ]] && [[ -f "${MINIO_DATADIR}/.secret_key" ]]; then
-        MINIO_ROOT_USER_OLD="$(cat "${MINIO_DATADIR}/.root_user")"
-        MINIO_ROOT_PASSWORD_OLD="$(cat "${MINIO_DATADIR}/.root_password")"
+    if is_boolean_yes "$MINIO_FORCE_NEW_KEYS" && [[ -f "${MINIO_DATA_DIR}/.root_user" ]] && [[ -f "${MINIO_DATADIR}/.root_password" ]]; then
+        MINIO_ROOT_USER_OLD="$(cat "${MINIO_DATA_DIR}/.root_user")"
+        MINIO_ROOT_PASSWORD_OLD="$(cat "${MINIO_DATA_DIR}/.root_password")"
         if [[ "$MINIO_ROOT_USER_OLD" != "$MINIO_ROOT_USER" ]] || [[ "$MINIO_ROOT_PASSWORD_OLD" != "$MINIO_ROOT_PASSWORD" ]]; then
             info "Reconfiguring MinIO credentials..."
             export MINIO_ROOT_USER_OLD MINIO_ROOT_PASSWORD_OLD
@@ -314,9 +267,9 @@ minio_regenerate_keys() {
             error_code=1
         fi
     fi
-    echo "$MINIO_ROOT_USER" > "${MINIO_DATADIR}/.root_user"
-    echo "$MINIO_ROOT_PASSWORD" > "${MINIO_DATADIR}/.root_password"
-    chmod 600 "${MINIO_DATADIR}/.secret_key" "${MINIO_DATADIR}/.access_key"
+    echo "$MINIO_ROOT_USER" > "${MINIO_DATA_DIR}/.root_user"
+    echo "$MINIO_ROOT_PASSWORD" > "${MINIO_DATA_DIR}/.root_password"
+    chmod 600 "${MINIO_DATA_DIR}/.root_user" "${MINIO_DATA_DIR}/.root_password"
 
     [[ "$error_code" -eq 0 ]] || exit "$error_code"
 }
