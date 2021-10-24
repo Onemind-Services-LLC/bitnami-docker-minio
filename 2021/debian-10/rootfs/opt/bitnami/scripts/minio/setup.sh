@@ -7,12 +7,12 @@ set -o nounset
 set -o pipefail
 #set -o xtrace
 
+# Load MinIO environment
+. /opt/bitnami/scripts/minio-env.sh
+
 # Load libraries
 . /opt/bitnami/scripts/liblog.sh
 . /opt/bitnami/scripts/libminio.sh
-
-# Load MinIO environment
-. /opt/bitnami/scripts/minio-env.sh
 
 export MINIO_SERVER_PORT_NUMBER="$MINIO_API_PORT_NUMBER"
 export MINIO_SERVER_SCHEME="$MINIO_SCHEME"

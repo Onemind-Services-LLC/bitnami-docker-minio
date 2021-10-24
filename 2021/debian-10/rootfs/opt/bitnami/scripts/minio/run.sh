@@ -7,13 +7,13 @@ set -o nounset
 set -o pipefail
 #set -o xtrace
 
+# Load MinIO environment
+. /opt/bitnami/scripts/minio-env.sh
+
 # Load libraries
 . /opt/bitnami/scripts/liblog.sh
 . /opt/bitnami/scripts/libos.sh
 . /opt/bitnami/scripts/libminio.sh
-
-# Load MinIO environment
-. /opt/bitnami/scripts/minio-env.sh
 
 # Constants
 EXEC=$(command -v minio)
